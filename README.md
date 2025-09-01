@@ -13,7 +13,7 @@ Script per attivare gli aggiornamenti di sicurezza estesi (ESU) di Windows 10 fi
 
 Per verificare se ESU è già attivo sul tuo PC e se Windows è aggiornato:
 
-Fai doppio clic su **`Controlla_Stato_ESU_run.cmd`** come amministratore.
+Esegui **`Controlla_Stato_ESU_run.cmd`** come amministratore.
 
 Questo script controlla:
 - Se Windows 10 ha la versione minima richiesta (build 19045.6036)
@@ -26,7 +26,7 @@ Se ESU risulta già attivo, non serve fare altro!
 
 Per attivare gli aggiornamenti estesi:
 
-1. Fai doppio clic su **`Consumer_ESU_Enrollment_run.cmd`** come amministratore
+1. Esegui **`Consumer_ESU_Enrollment_run.cmd`** come amministratore
 2. Attendi il completamento
 3. **Ripeti** l'operazione una seconda volta (necessario per completare l'attivazione)
 
@@ -34,7 +34,7 @@ Per attivare gli aggiornamenti estesi:
 
 Per disattivare ESU:
 
-Fai doppio clic su **`Rimuovi_ESU_run.cmd`** come amministratore.
+Esegui **`Rimuovi_ESU_run.cmd`** come amministratore.
 
 ## Cosa Fanno gli Script
 
@@ -51,9 +51,16 @@ Fai doppio clic su **`Rimuovi_ESU_run.cmd`** come amministratore.
 
 ## Verifica Funzionamento
 
-Dopo l'attivazione, in Windows Update (Impostazioni → Aggiornamento e sicurezza) dovresti vedere:
+Dopo l'attivazione, puoi verificare in due modi:
 
+**1. Windows Update:**
+- Vai in **Impostazioni → Aggiornamento e sicurezza → Windows Update**
+- Nella colonna di destra dovresti vedere:
 > "Il PC è registrato per ottenere gli Aggiornamenti della sicurezza estesi"
+
+**2. Script di controllo:**
+- Esegui **`Controlla_Stato_ESU_run.cmd`** come amministratore
+- Dovrebbe mostrare "Dispositivo Iscritto" o "Iscritto con Account Microsoft"
 
 ## Problemi Comuni
 
