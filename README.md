@@ -22,21 +22,15 @@ Questo script controlla:
 
 Se ESU risulta già attivo, non serve fare altro!
 
-### 2. Attivazione Automatica (Consigliato)
+### 2. Attivazione ESU
 
-Fai doppio clic su **`Attiva_ESU_Automatico_run.cmd`** come amministratore.
-
-Lo script farà tutto automaticamente in due passaggi.
-
-### 3. Attivazione Manuale (Alternativa)
-
-Se preferisci il controllo manuale:
+Per attivare gli aggiornamenti estesi:
 
 1. Fai doppio clic su **`Consumer_ESU_Enrollment_run.cmd`** come amministratore
 2. Attendi il completamento
 3. **Ripeti** l'operazione una seconda volta (necessario per completare l'attivazione)
 
-### 4. Rimozione (se necessario)
+### 3. Rimozione (se necessario)
 
 Per disattivare ESU:
 
@@ -44,9 +38,8 @@ Fai doppio clic su **`Rimuovi_ESU_run.cmd`** come amministratore.
 
 ## Cosa Fanno gli Script
 
-- **Attiva_ESU_Automatico**: Attiva gli aggiornamenti estesi in modo completamente automatico
-- **Controlla_Stato_ESU**: Mostra lo stato dettagliato di ESU sul tuo PC
-- **Consumer_ESU_Enrollment**: Script principale (usato internamente dagli altri)
+- **Controlla_Stato_ESU**: Mostra lo stato dettagliato di ESU sul tuo PC e verifica i requisiti
+- **Consumer_ESU_Enrollment**: Script principale per attivare ESU
 - **Rimuovi_ESU**: Rimuove l'attivazione ESU se non più necessaria
 
 ## Note Importanti
