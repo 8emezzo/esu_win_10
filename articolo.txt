@@ -1,0 +1,67 @@
+Come iscriversi a Windows 10 ESU con account locale: Guida facile e funzionante!
+Con il termine del supporto ufficiale di Windows 10, lo script PowerShell ConsumerESU consente di ricevere gli aggiornamenti di sicurezza fino a ottobre 2026 anche con un account locale, senza usare neppure Windows Backup.
+Michele Nasi
+Michele Nasi
+Pubblicato il 25 ago 2025
+Come iscriversi a Windows 10 ESU con account locale: Guida facile e funzionante!
+Patch management Windows 10
+Con la fine del supporto ufficiale per Windows 10, aziende, professionisti e utenti si trovano davanti a una sfida critica: come mantenere aggiornati i sistemi e garantire la sicurezza delle informazioni senza dover migrare immediatamente a Windows 11? Il programma Extended Security Updates (ESU) per Windows 10 rappresenta un’opportunità unica per continuare a ricevere aggiornamenti di sicurezza fondamentali, riducendo i rischi legati a vulnerabilità note e permettendo una transizione più graduale verso sistemi più moderni.
+
+
+Grazie a ESU, anche gli utenti domestici e i professionisti possono estendere la ricezione degli aggiornamenti di sicurezza fino al 13 ottobre 2026, un anno dopo la fine del ciclo di vita di Windows 10 (14 ottobre 2025).
+
+Perché considerare Windows 10 ESU
+Sicurezza continuativa: gli aggiornamenti ESU coprono vulnerabilità critiche, riducendo il rischio di attacchi malware e exploit.
+Flessibilità operativa: permette agli utenti di rimanere su Windows 10, evitando la necessità immediata di migrare a Windows 11 o sostituire hardware incompatibile.
+Compatibilità software: alcuni software legacy potrebbero non essere pienamente compatibili con Windows 11; ESU garantisce aggiornamenti di sicurezza senza interrompere l’operatività.
+Attivare gli aggiornamenti di Windows 10 fino al 13 ottobre 2026, gratis
+Fino a qualche tempo fa, l’unico modo per estendere gli aggiornamenti di Windows 10 gratis consisteva nel destinare all’operazione 1.000 punti Microsoft Rewards oppure usare un account Microsoft e attivare la creazione di una copia di sicurezza delle impostazioni del sistema sul cloud Microsoft, avvalendosi del software chiamato Windows Backup.
+
+Un ricercatore indipendente spiega che il cuore del meccanismo per la gestione di ESU in Windows 10 è la libreria \%systemroot%\system32\ConsumerESUMgr.dll, automaticamente aggiunta con l’installazione degli aggiornamenti più recenti (KB5061087 e successivi).
+
+
+Di norma è richiesto che l’utente utilizzi un account Microsoft per collegare la licenza ESU al proprio profilo. In realtà, come spiegato l’autore di questo script PowerShell, la libreria ConsumerESUMgr.dll prevede anche la possibilità di ricevere un token di attivazione anche in presenza di un solo account locale. Ciò è stato previsto, molto probabilmente, per compatibilità o per la gestione di scenari speciali.
+
+Come ricevere gli aggiornamenti di sicurezza Windows 10 con lo script ConsumerESU, senza usare account Microsoft
+Il primo passo consiste nel premere Windows+R quindi digitare winver. La build di Windows 10 indicata tra parentesi tonde deve essere 19045.6036 o successiva.
+
+Adesso, digitando Windows Update nella casella di ricerca di Windows 10 quindi scegliendo Verifica disponibilità aggiornamenti, si nota che nella finestra principale del sistema di aggiornamento non è presente alcun riferimento alla possibilità di accedere all’estensione degli update (colonna di destra).
+
+
+ESU Windows 10 con account locale
+
+A questo punto si può scaricare lo script ConsumerESU quindi estrarne il contenuto in C:\ e accedere alla cartella C:\ConsumerESU-master.
+
+Cliccando con il tasto destro sul file Consumer_ESU_Enrollment_run.cmd si deve cliccare su Esegui come amministratore.
+
+
+Estensione aggiornamenti sicurezza ESU Windows 10 con script PowerShell
+
+Al termine della procedura, si deve premere Invio per chiudere la finestra a sfondo nero per poi cliccare ancora una volta con il tasto destro su Consumer_ESU_Enrollment_run.cmd e poi sulla voce Esegui come amministratore.
+
+Stato attivazione ESU Windows 10
+
+
+Dovrebbe apparire un messaggio simile a quello riprodotto in figura. Se così non fosse, è possibile eseguire nuovamente Consumer_ESU_Enrollment_run.cmd con i diritti amministrativi.
+
+Tornando nella finestra Verifica disponibilità aggiornamenti di Windows Update, nella colonna di destra dovrebbe comparire il messaggio Il PC è registrato per ottenere gli Aggiornamenti della sicurezza estesi.
+
+Aggiornamenti sicurezza estesi Windows 10
+
+
+Come funziona lo script PowerShell che porta gli aggiornamenti di Windows 10 al 13 ottobre 2026?
+Abbiamo studiato il funzionamento dello script PowerShell. Contiene tre percorsi alternativi per ottenere un token:
+
+TokenMsAccountUser: token ottenuto da un account Microsoft online (classico).
+TokenMsAccountStore: token ricavato dall’account collegato al Microsoft Store.
+TokenLocalAccount: usa l’API WinRT OnlineIdSystemAuthenticator che permette di generare un service ticket MBI_SSL anche per un account locale. Questo ticket è sufficiente a “soddisfare” l’API di ConsumerESUMgr.dll, senza mai dover collegare un account Microsoft al PC.
+Se la funzionalità ESU “consumer” non risulta ancora attiva, il codice dello script abilita manualmente un “Feature Management Override” nel registro di sistema di Windows: nella chiave HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Policies\Microsoft\FeatureManagement\Overrides forza l’attivazione tramite l’aggiunta del valore RtlSetFeatureConfigurations. In questo modo il sistema riconosce il PC come abilitato al programma ESU.
+
+Lo script PowerShell deve essere eseguito, come visto in precedenza, almeno due volte perché in prima battuta è attivato l’“interruttore” di ESU a livello di sistema. La seconda esecuzione, invece, serve a registrare il PC Windows 10 con un token valido, completando con successo l’iscrizione al programma ESU.
+
+Non è escluso che Microsoft modifichi il comportamento della libreria ConsumerESUMgr.dll. Tuttavia, lo sviluppatore indipendente non modifica né sostituisce librerie di sistema né DLL originali: tutto avviene usando API ufficiali esposte da Windows.
+
+Conclusioni
+Il programma ESU per Windows 10 rappresenta una soluzione strategica per aziende, professionisti e utenti domestici che desiderano continuare a garantire sicurezza e stabilità dei propri sistemi senza affrontare subito la migrazione a Windows 11.
+
+Grazie a ESU, è possibile ricevere aggiornamenti critici fino al 13 ottobre 2026, proteggendo dati e applicazioni legacy e mantenendo la compatibilità con software che potrebbe non funzionare correttamente su Windows 11. L’uso dello script PowerShell ConsumerESU offre un metodo pratico per estendere la ricezione degli aggiornamenti anche senza un account Microsoft, sfruttando meccanismi integrati in Windows, come la libreria ConsumerESUMgr.dll e le API WinRT.
