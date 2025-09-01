@@ -76,7 +76,7 @@ CONOUT "====================================" "Cyan"
 CONOUT ""
 
 # 1. Informazioni Sistema
-CONOUT "[1/8] INFORMAZIONI SISTEMA" "Yellow"
+CONOUT "[1/7] INFORMAZIONI SISTEMA" "Yellow"
 CONOUT "------------------------------------------" "Gray"
 
 $buildInfo = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion"
@@ -109,7 +109,7 @@ if ($buildNum -eq "19045") {
 CONOUT ""
 
 # 2. Componenti ESU
-CONOUT "[2/8] COMPONENTI ESU" "Yellow"
+CONOUT "[2/7] COMPONENTI ESU" "Yellow"
 CONOUT "------------------------------------------" "Gray"
 
 $componentiOK = $true
@@ -146,7 +146,7 @@ if (Test-Path "$SysPath\ClipESUConsumer.exe") {
 CONOUT ""
 
 # 3. Feature ESU
-CONOUT "[3/8] STATO FEATURE ESU" "Yellow"
+CONOUT "[3/7] STATO FEATURE ESU" "Yellow"
 CONOUT "------------------------------------------" "Gray"
 
 $featureOverride = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Policies\Microsoft\FeatureManagement\Overrides" -Name "4011992206" -ErrorAction SilentlyContinue
@@ -161,7 +161,7 @@ if ($featureOverride."4011992206" -eq 2) {
 CONOUT ""
 
 # 4. Valutazione stato ESU
-CONOUT "[4/8] STATO REGISTRAZIONE ESU" "Yellow"
+CONOUT "[4/7] STATO REGISTRAZIONE ESU" "Yellow"
 CONOUT "------------------------------------------" "Gray"
 
 if ($componentiOK) {
@@ -220,37 +220,8 @@ if ($null -ne $esuResult) {
 }
 CONOUT ""
 
-# 5. Licenza ESU
-CONOUT "[5/8] LICENZA ESU" "Yellow"
-CONOUT "------------------------------------------" "Gray"
-
-$licenzaKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SoftwareProtectionPlatform\Licenses\Professional\ConsumerESU"
-if (Test-Path $licenzaKey) {
-    CONOUT "[OK] Licenza ESU presente nel registro" "Green"
-    $reportContent += "- Licenza registro: PRESENTE"
-} else {
-    CONOUT "[X] Licenza ESU non presente nel registro" "Red"
-    $reportContent += "- Licenza registro: NON PRESENTE"
-}
-
-# Verifica pacchetto AppX
-try {
-    $appxPackage = Get-AppxPackage -Name "*ConsumerExtendedSecurityUpdates*" -AllUsers -ErrorAction SilentlyContinue
-    if ($appxPackage) {
-        CONOUT "[OK] Pacchetto ESU installato" "Green"
-        CONOUT "     Package: $($appxPackage.PackageFullName)" "Gray"
-        $reportContent += "- Pacchetto AppX: INSTALLATO"
-    } else {
-        CONOUT "[X] Pacchetto ESU non trovato" "Red"
-        $reportContent += "- Pacchetto AppX: NON TROVATO"
-    }
-} catch {
-    CONOUT "[!] Impossibile verificare pacchetto AppX" "Yellow"
-}
-CONOUT ""
-
-# 6. Task Scheduler
-CONOUT "[6/8] TASK SCHEDULER ESU" "Yellow"
+# 5. Task Scheduler
+CONOUT "[5/7] TASK SCHEDULER ESU" "Yellow"
 CONOUT "------------------------------------------" "Gray"
 
 try {
@@ -272,8 +243,8 @@ try {
 }
 CONOUT ""
 
-# 7. Windows Update
-CONOUT "[7/8] STATO WINDOWS UPDATE" "Yellow"
+# 6. Windows Update
+CONOUT "[6/7] STATO WINDOWS UPDATE" "Yellow"
 CONOUT "------------------------------------------" "Gray"
 
 try {
@@ -300,8 +271,8 @@ try {
 }
 CONOUT ""
 
-# 8. Riepilogo finale
-CONOUT "[8/8] RIEPILOGO FINALE" "Yellow"
+# 7. Riepilogo finale
+CONOUT "[7/7] RIEPILOGO FINALE" "Yellow"
 CONOUT "==========================================" "Cyan"
 CONOUT ""
 
