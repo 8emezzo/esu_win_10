@@ -11,11 +11,16 @@ Script per attivare gli aggiornamenti di sicurezza estesi (ESU) di Windows 10 fi
 
 ### 1. Controllo Stato
 
-Per verificare se ESU è già attivo sul tuo PC:
+Per verificare se ESU è già attivo sul tuo PC e se Windows è aggiornato:
 
 Fai doppio clic su **`Controlla_Stato_ESU_run.cmd`** come amministratore.
 
-Se risulta già attivo, non serve fare altro!
+Questo script controlla:
+- Se Windows 10 ha la versione minima richiesta (build 19045.6036)
+- Se ESU è già attivo
+- Lo stato completo del sistema
+
+Se ESU risulta già attivo, non serve fare altro!
 
 ### 2. Attivazione Automatica (Consigliato)
 
