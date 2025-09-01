@@ -322,10 +322,9 @@ if (!$Report) {
     CONOUT "[1] Esci" "Gray"
     CONOUT "[2] Genera report dettagliato" "Gray"
     CONOUT "[3] Apri Windows Update" "Gray"
-    CONOUT "[4] Esegui script di attivazione" "Gray"
     CONOUT ""
     
-    $scelta = Read-Host "Scegli opzione (1-4)"
+    $scelta = Read-Host "Scegli opzione (1-3)"
     
     switch ($scelta) {
         "2" {
@@ -339,16 +338,6 @@ if (!$Report) {
         "3" {
             CONOUT "`nApertura Windows Update..." "Gray"
             Start-Process "ms-settings:windowsupdate"
-        }
-        "4" {
-            $activationScript = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Attiva_ESU_Automatico.ps1"
-            if (Test-Path $activationScript) {
-                CONOUT "`nAvvio script di attivazione..." "Gray"
-                & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $activationScript
-            } else {
-                CONOUT "`nScript di attivazione non trovato!" "Red"
-                Start-Sleep -Seconds 2
-            }
         }
     }
 }
