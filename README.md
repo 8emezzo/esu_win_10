@@ -6,7 +6,7 @@ Script per attivare gli aggiornamenti di sicurezza estesi (ESU) di Windows 10 fi
 
 
 ## Requisiti
-- Controllare che non ci sia il file aggiornato qua (https://github.com/abbodi1406/ConsumerESU)
+- Controllare che non ci sia il file "Consumer_ESU_Enrollment.ps1" aggiornato qua (https://github.com/abbodi1406/ConsumerESU)
 - Windows 10 con aggiornamento **KB5061087** (build 19045.6036) o successivo
 - Privilegi di amministratore
 
@@ -80,3 +80,4 @@ Dopo l'attivazione, puoi verificare in due modi:
 
 
 Gli script utilizzano solo API ufficiali di Windows e non modificano file di sistema.
+
