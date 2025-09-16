@@ -6,9 +6,10 @@ Script per attivare gli aggiornamenti di sicurezza estesi (ESU) di Windows 10 fi
 
 
 ## Requisiti
- - Stai eseguendo PowerShell da Amministratore a 64-bit, perché ma la dll è a 64-bit. Attenzione a non usare PowerShell a 32-bit.****
+- PowerShell da Amministratore a 64-bit, perché ma la dll è a 64-bit. Attenzione a non usare PowerShell a 32-bit.
 - Controllare che non ci sia il file "Consumer_ESU_Enrollment.ps1" aggiornato qua (https://github.com/abbodi1406/ConsumerESU)
 - Windows 10 con aggiornamento **KB5061087** (build 19045.6036) o successivo
+- Disattivare temporaneamente l'antivirus
 
 ## Come Usare
 
@@ -80,5 +81,6 @@ Dopo l'attivazione, puoi verificare in due modi:
 
 
 Gli script utilizzano solo API ufficiali di Windows e non modificano file di sistema.
+
 
 
