@@ -2,8 +2,11 @@
 
 Script per attivare gli aggiornamenti di sicurezza estesi (ESU) di Windows 10 fino al **13 ottobre 2026**, anche con account locale.
 
-## Requisiti
 
+
+
+## Requisiti
+- Controllare che non ci sia il file aggiornato qua (https://github.com/abbodi1406/ConsumerESU)
 - Windows 10 con aggiornamento **KB5061087** (build 19045.6036) o successivo
 - Privilegi di amministratore
 
@@ -74,5 +77,6 @@ Dopo l'attivazione, puoi verificare in due modi:
 - Il PC è già iscritto, non serve fare altro
 
 ## Sicurezza
+
 
 Gli script utilizzano solo API ufficiali di Windows e non modificano file di sistema.
