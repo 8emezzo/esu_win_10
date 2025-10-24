@@ -16,6 +16,9 @@ param (
     $Remove,
     [Parameter()]
     [switch]
+    $Reset,
+    [Parameter()]
+    [switch]
     $Proceed
 )
 
@@ -24,38 +27,23 @@ param (
 [bool]$bMsAccountStore = $Store.IsPresent
 [bool]$bLocalAccount   = $Local.IsPresent
 [bool]$bAcquireLicense = $License.IsPresent
-[bool]$bRemoveLicense = $Remove.IsPresent
+[bool]$bRemoveLicense  = $Remove.IsPresent
+[bool]$bResetFCon      = $Reset.IsPresent
 [bool]$bProceed = $Proceed.IsPresent
 if ($bMsAccountUser) {
 	$bDefault = $false
 	$bMsAccountStore = $false
 	$bLocalAccount = $false
-	$bAcquireLicense = $false
 }
 if ($bMsAccountStore) {
 	$bDefault = $false
 	$bMsAccountUser = $false
 	$bLocalAccount = $false
-	$bAcquireLicense = $false
 }
 if ($bLocalAccount) {
 	$bDefault = $false
 	$bMsAccountUser = $false
 	$bMsAccountStore = $false
-	$bAcquireLicense = $false
-}
-if ($bAcquireLicense) {
-	$bDefault = $false
-	$bMsAccountUser = $false
-	$bMsAccountStore = $false
-	$bLocalAccount = $false
-}
-if ($bRemoveLicense) {
-	$bDefault = $false
-	$bMsAccountUser = $false
-	$bMsAccountStore = $false
-	$bLocalAccount = $false
-	$bAcquireLicense = $false
 }
 
 [bool]$cmdps = $MyInvocation.InvocationName -EQ "&"
@@ -93,7 +81,7 @@ if (Test-Path "$env:SystemRoot\Sysnative\reg.exe") {
 if (!(Test-Path "$SysPath\ConsumerESUMgr.dll")) {
 	CONOUT "==== ERROR ====`r`n"
 	CONOUT "ConsumerESUMgr.dll is not detected."
-	CONOUT "Make sure to install update 2025-07 KB5061087 (19045.6036) or later."
+	CONOUT "Make sure to install update 2025-06 KB5061087 (19045.6036) or later."
 	ExitScript 1
 }
 
@@ -110,6 +98,10 @@ $eeStatus = @{
 	8 = "LoginWithPrimaryAccountToEnroll";
 	9 = "LoginWithPrimaryAccountToCompletePreOrder";
 	10 = "ComingSoon";
+	11 = "EEAFreeMSAEnrolled";
+	12 = "EEAPaidMSAEnrolled";
+	13 = "WarnInactiveMSA";
+	14 = "ReEnrollReqInactiveMSA";
 }
 $eeResult = @{
 	1 = "SUCCESS";
@@ -122,8 +114,11 @@ $eeResult = @{
 	8 = "AZURE_DEVICE";
 	9 = "COMMERCIAL_MIGRATED_DEVICE";
 	10 = "LOGIN_WITH_PRIMARY_ACCOUNT_TO_COMPLETE_PREORDER";
+	11 = "CONSUMER_ESU_FEATURE_DISABLED";
 	12 = "KEY_BASED_ESU";
 	13 = "EEA_REGION_POLICY_ENABLED";
+	14 = "WARN_INACTIVE_MSA";
+	15 = "REENROLL_REQ_INACTIVE_MSA";
 	100 = "UNKNOWN_ERROR";
 	101 = "CONSUMER_ESU_PROGRAM_ACTIVE_CHECK_FAILED";
 	102 = "LICENSE_CHECK_FAILED";
@@ -137,6 +132,7 @@ $eeResult = @{
 	110 = "COMMERCIAL_MIGRATED_DEVICE_CHECK_FAILED";
 	111 = "EMBARGOED_REGION_CHECK_FAILED";
 	112 = "KEY_BASED_ESU_CHECK_FAILED";
+	113 = "FREE_MSA_ELIGIBILITY_CHECK_FAILED";
 }
 
 $fKey10 = 'HKLM:\SYSTEM\CurrentControlSet\Policies\Microsoft\FeatureManagement\Overrides'
@@ -145,8 +141,8 @@ $TN = "ReconcileFeatures"; $TP = "\Microsoft\Windows\Flighting\FeatureConfig\"
 $svc = 'DiagTrack'
 $enablesvc = $false
 try {$obj = Get-Service $svc -EA 1; $enablesvc = ($obj.StartType.value__ -eq 4)} catch {}
-$featueESU = $false
-$featueEEA = $false
+$featureESU = $false
+$BSD = $false
 
 $gKey = "HKCU:\Control Panel\International\Geo"
 $rKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\DeviceRegion"
@@ -160,6 +156,10 @@ if (Test-Path $jPath) {
 	$jList = ($jData.policies | where {$_.guid.Contains("1d290cdb-499c-4d42-938a-9b8dceffe998")}).conditions.region.disabled
 	$DMA_SSO = $jList -contains $GeoCN
 }
+$scope = "service::www.microsoft.com::MBI_SSL"
+if ($DMA_SSO) {
+	$scope = $scope + "&ssoappgroup=windows"
+}
 
 function NativeMethods
 {
@@ -170,7 +170,20 @@ function NativeMethods
 	$t.DefinePInvokeMethod('RtlQueryFeatureConfiguration', 'ntdll.dll', 22, 1, [Int32], @([UInt32], [UInt32], [UInt64].MakeByRefType(), [UInt32[]]), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('RtlQueryFeatureConfigurationChangeStamp', 'ntdll.dll', 22, 1, [UInt64], @(), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('RtlSetFeatureConfigurations', 'ntdll.dll', 22, 1, [Int32], @([UInt64].MakeByRefType(), [UInt32], [Byte[]], [Int32]), 1, 3).SetImplementationFlags(128)
+	$t.DefinePInvokeMethod('RtlSetSystemBootStatus', 'ntdll.dll', 22, 1, [Int32], @([Int32], [Int32].MakeByRefType(), [Int32], [IntPtr]), 1, 3).SetImplementationFlags(128)
+	$t.DefinePInvokeMethod('RtlGetSystemBootStatus', 'ntdll.dll', 22, 1, [Int32], @([Int32], [Int32].MakeByRefType(), [Int32], [IntPtr]), 1, 3).SetImplementationFlags(128)
+	$t.DefinePInvokeMethod('RtlCreateBootStatusDataFile', 'ntdll.dll', 22, 1, [Int32], @([String]), 1, 3).SetImplementationFlags(128)
 	$Win32 = $t.CreateType()
+}
+
+function ReRegion($gID)
+{
+	$null = New-ItemProperty $gKey "Nation" -Value $gID -Type String -Force -EA 0
+	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {
+		Copy-Item (Get-Command reg.exe).Source .\reg1.exe -Force -EA 0
+		& .\reg1.exe add "$($rKey.Replace(':',''))" /v DeviceRegion /t REG_DWORD /d $gID /f > $null 2>&1
+		Remove-Item .\reg1.exe -Force -EA 0
+	}
 }
 #endregion
 
@@ -264,7 +277,7 @@ function TokenMsAccountUser
 {
 	$provider = AwaitOperation ([Windows.Security.Authentication.Web.Core.WebAuthenticationCoreManager,Windows,ContentType=WindowsRuntime]::FindAccountProviderAsync("https://login.windows.local", "consumers")) ([Windows.Security.Credentials.WebAccountProvider,Windows,ContentType=WindowsRuntime])
 	if ($null -eq $provider) {return $null}
-	$request = [Windows.Security.Authentication.Web.Core.WebTokenRequest,Windows,ContentType=WindowsRuntime]::new($provider, "service::www.microsoft.com::MBI_SSL", "d122d5c5-5240-4164-b88c-986b5f1cf7f9", 0)
+	$request = [Windows.Security.Authentication.Web.Core.WebTokenRequest,Windows,ContentType=WindowsRuntime]::new($provider, $scope, "d122d5c5-5240-4164-b88c-986b5f1cf7f9", 0)
 	if ($null -eq $request) {return $null}
 	$result = AwaitOperation ([Windows.Security.Authentication.Web.Core.WebAuthenticationCoreManager,Windows,ContentType=WindowsRuntime]::GetTokenSilentlyAsync($request)) ([Windows.Security.Authentication.Web.Core.WebTokenRequestResult,Windows,ContentType=WindowsRuntime])
 	if ($null -eq $result -Or $result.ResponseStatus -ne 0) {return $null}
@@ -282,7 +295,7 @@ function TokenMsAccountStore
 	if ($null -eq $provider) {return $null}
 	$account = AwaitOperation ([Windows.Security.Authentication.Web.Core.WebAuthenticationCoreManager,Windows,ContentType=WindowsRuntime]::FindAccountAsync($provider, $id)) ([Windows.Security.Credentials.WebAccount,Windows,ContentType=WindowsRuntime])
 	if ($null -eq $account) {return $null}
-	$request = [Windows.Security.Authentication.Web.Core.WebTokenRequest,Windows,ContentType=WindowsRuntime]::new($provider, "service::www.microsoft.com::MBI_SSL", "d122d5c5-5240-4164-b88c-986b5f1cf7f9", 0)
+	$request = [Windows.Security.Authentication.Web.Core.WebTokenRequest,Windows,ContentType=WindowsRuntime]::new($provider, $scope, "d122d5c5-5240-4164-b88c-986b5f1cf7f9", 0)
 	if ($null -eq $request) {return $null}
 	$result = AwaitOperation ([Windows.Security.Authentication.Web.Core.WebAuthenticationCoreManager]::GetTokenSilentlyAsync($request, $account)) ([Windows.Security.Authentication.Web.Core.WebTokenRequestResult,Windows,ContentType=WindowsRuntime])
 	if ($null -eq $result -Or $result.ResponseStatus -ne 0) {return $null}
@@ -314,7 +327,7 @@ function ObtainToken
 	if ($null -eq $msaToken -And ($bDefault -Or $bMsAccountStore)) {
 		$msaToken = TokenMsAccountStore
 	}
-	if ($null -eq $msaToken -And ($bDefault -Or $bLocalAccount)) {
+	if ($null -eq $msaToken -And ($bLocalAccount)) {
 		$msaToken = TokenLocalAccount
 	}
 	if ($null -eq $msaToken) {
@@ -324,16 +337,38 @@ function ObtainToken
 #endregion
 
 #region FCon
+function RtlBSD
+{
+	$state = 0
+	try {$nRet = $Win32::RtlGetSystemBootStatus(17, [ref]$state, 4, 0)} catch {return $FALSE}
+	if ($nRet -eq 0 -Or $state -gt 0) {return $TRUE}
+
+	if ($nRet -eq 0xC0000034) {
+		try {$nRet = $Win32::RtlCreateBootStatusDataFile([NullString]::Value)} catch {return $FALSE}
+		if ($nRet -eq 0 -Or $nRet -eq 0xC0000035) {return $TRUE}
+	}
+
+	if ($nRet -eq 0xC0000059) {
+		$state = 0xb0
+		try {$nRet = $Win32::RtlSetSystemBootStatus(0, [ref]$state, 4, 0)} catch {return $FALSE}
+		if ($nRet -eq 0) {return $TRUE}
+	}
+
+	return $FALSE
+}
+
 function RevertService
 {
+	if ($BSD) {return}
 	if ($enablesvc) {
 		try {Set-Service $svc -StartupType Disabled -EA 1} catch {}
-		try {Stop-Service $svc -Force -Confirm -EA 1} catch {}
+		try {Stop-Service $svc -Force -Confirm:$false -EA 1} catch {}
 	}
 }
 
 function RunService
 {
+	if ($BSD) {return}
 	if ($enablesvc) {
 		try {Set-Service $svc -StartupType Automatic -EA 1} catch {}
 		try {Start-Service $svc -EA 1} catch {}
@@ -344,6 +379,7 @@ function RunService
 
 function RunTask
 {
+	try {$task = Get-ScheduledTask $TN $TP -ErrorAction Stop} catch {return}
 	$null = Enable-ScheduledTask $TN $TP
 	Start-ScheduledTask $TN $TP; while ((Get-ScheduledTask $TN $TP).State.value__ -eq 4) {start-sleep -sec 1}
 }
@@ -364,16 +400,8 @@ function SetConfig($fID, $fState, $fReg)
 		if ($null -ne (Get-ItemProperty $fKey10 $fReg -EA 0)) {$null = Remove-ItemProperty $fKey10 $fReg -Force -EA 0}
 	}
 
-	try {$task = Get-ScheduledTask $TN $TP -ErrorAction Stop} catch {}
-
-	if ($null -ne $task) {
-		RunTask
-	} else {
-		RunService
-	}
-
 	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]$fID) + [BitConverter]::GetBytes($fPriority) + [BitConverter]::GetBytes($fState) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(1)
-	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {UInt64]$fccs = 0}
+	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {[UInt64]$fccs = 0}
 	try {
 		$nRet = $Win32::RtlSetFeatureConfigurations([ref]$fccs, 1, $fcon, 1)
 		if ($nRet -lt 0) {
@@ -385,11 +413,38 @@ function SetConfig($fID, $fState, $fReg)
 		return
 	}
 
-	if ($null -ne $task) {
-		RunTask
-	} else {
-		RevertService
+	return
+}
+
+function ResetConfig($fID, $fReg)
+{
+	try {
+		$fInfo = [UInt32[]]::new(3)
+		$nRet = $Win32::RtlQueryFeatureConfiguration([UInt32]$fID, 1, [ref]$null, $fInfo)
+		if ($nRet -eq 0) {
+			$fPriority = ($fInfo[1] -band 0xF)
+		} else {
+			return
+		}
+	} catch {
+		return
 	}
+
+	if ($fPriority -ne 10 -And $fPriority -ne 8) {
+		return
+	}
+
+	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]$fID) + [BitConverter]::GetBytes($fPriority) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(4)
+	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {[UInt64]$fccs = 0}
+	try {
+		$nRet = $Win32::RtlSetFeatureConfigurations([ref]$fccs, 1, $fcon, 1)
+	} catch {
+	}
+
+	if ($null -ne (Get-ItemProperty $fKey10 $fReg -EA 0)) {$null = Remove-ItemProperty $fKey10 $fReg -Force -EA 0}
+	$fKeySub = $fKey08 + '\' + $fReg
+	if ($null -ne (Get-Item $fKeySub -EA 0)) {$null = Remove-Item $fKeySub -Force -EA 0}
+
 	return
 }
 
@@ -469,42 +524,75 @@ function DoEnroll
 
 function RunAcquireLicense
 {
-	CONOUT "`nAcquire Consumer ESU License regardless enrollment..."
+	CONOUT "`nAcquire Consumer ESU License regardless enrollment ..."
 	$bRet = DoAcquireLicense
 	CONOUT ("Operation result: " + ("Failure", "Success")[$bRet])
 	CheckEligibility
-	Exit !$bRet
+	ExitScript !$bRet
 }
 
 function RunRemoveLicense
 {
-	CONOUT "`nRemove Consumer ESU License if exists..."
+	CONOUT "`nRemove Consumer ESU License if exists ..."
 	$bRet = DoRemoveLicense
 	CONOUT ("Operation result: " + ("Failure", "Success")[$bRet])
 	CheckEligibility
-	Exit !$bRet
+	ExitScript !$bRet
 }
 #endregion
 
+#region DisabledFunctions
+if ($bAcquireLicense) {
+	CONOUT "`nAcquire License is not possible without enrollment."
+	ExitScript 1
+	#RunAcquireLicense
+}
+
+if ($bLocalAccount) {
+	CONOUT "`nEnrollment is not possible with Local user account."
+	ExitScript 1
+}
+#endregion
+
+. NativeMethods
+$BSD = RtlBSD
+
 #region Unlicense
 if ($bRemoveLicense) {
-	. NativeMethods
 	RunRemoveLicense
 }
 #endregion
 
 #region Features
-. NativeMethods
-$featueESU = QueryConfig 57517687
-$featueEEA = QueryConfig 58755790
-if (!$featueESU) {
-	CONOUT "`nEnabling Consumer ESU feature..."
+if ($bResetFCon) {
+	CONOUT "`nReset Consumer ESU features to the default state ..."
+	RunService
+	ResetConfig 57517687 "4011992206"
+	ResetConfig 58992578 "2216818319"
+	ResetConfig 58755790 "2642149007"
+	ResetConfig 59064570 "4109366415"
+	RunTask
+	RevertService
+	CheckEligibility
+	ExitScript 0
+}
+
+RunService
+$featureESU = QueryConfig 57517687
+if (!$featureESU) {
+	CONOUT "`nEnable Consumer ESU feature ..."
 	SetConfig 57517687 2 "4011992206"
 }
-if ($featueEEA) {
-	CONOUT "`nDisabling EEA_REGION_POLICY_ENABLED feature..."
+if ($DMA_SSO) {
+	CONOUT "`nDisable EEA_REGION_POLICY_CHECK features ..."
+	SetConfig 58992578 1 "2216818319"
 	SetConfig 58755790 1 "2642149007"
+	SetConfig 59064570 1 "4109366415"
 }
+if (!$featureESU -Or $DMA_SSO) {
+	RunTask
+}
+RevertService
 
 try {
 	$hRet = $Win32::GetESUEligibilityStatusV1([ref]$null, [ref]$null, [NullString]::Value, 0)
@@ -515,45 +603,41 @@ try {
 if ($hRet -eq 0x80080002) {
 	CONOUT "==== ERROR ====`r`n"
 	CONOUT "Consumer ESU feature is still not enabled: E_CONSUMER_ESU_FEATURE_DISABLED"
-	CONOUT "Close this console session and run the script again to take effect."
+	CONOUT "Restart the system and try again."
 	ExitScript 1
 }
 #endregion
 
 #region Main
-if ($bAcquireLicense) {
-	RunAcquireLicense
-}
-
 . CheckEligibility
 $supported = $false
 if ($null -ne $esuStatus) {
-	$supported = ($esuStatus -ge 2 -And $esuStatus -le 5) -Or (($esuStatus -eq 1 -Or $esuStatus -eq 10) -And ($esuResult -eq 3 -Or $esuResult -eq 13))
+	$supported = ($esuStatus -ge 2 -And $esuStatus -le 5) -Or ($esuStatus -ge 11 -And $esuStatus -le 14) -Or (($esuStatus -eq 1 -Or $esuStatus -eq 10) -And ($esuResult -ge 13 -And $esuResult -le 15))
 }
 if (!$supported) {
 	CONOUT "`nEligibility status is not supported for enrollment."
-	CONOUT "Run the script with -License parameter to force acquire license."
+	#CONOUT "Run the script with -License parameter to force acquire license."
 	ExitScript 1
 }
-if ($esuStatus -eq 3 -And $esuResult -eq 1 -And !$bProceed) {
+if ($esuResult -eq 1 -And ($esuStatus -eq 3 -Or $esuStatus -eq 11 -Or $esuStatus -eq 12) -And !$bProceed) {
 	CONOUT "`nYour PC is already enrolled for Consumer ESU."
 	CONOUT "No need to proceed."
 	ExitScript 0
 }
 
 if ($DMA_SSO) {
-	$null = New-ItemProperty $gKey "Nation" -Value 244 -Type String -Force -EA 0
-	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {$null = New-ItemProperty $rKey "DeviceRegion" -Value 244 -Type DWord -Force -EA 0}
+	ReRegion 244
 }
 . ObtainToken
 if ($DMA_SSO) {
-	$null = New-ItemProperty $gKey "Nation" -Value $GeoId -Type String -Force -EA 0
-	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {$null = New-ItemProperty $rKey "DeviceRegion" -Value $GeoId -Type DWord -Force -EA 0}
+	ReRegion $GeoId
 }
 
 if ($null -eq $msaToken) {
+	CONOUT "`nEnrollment is not possible without Microsoft Account Token."
+	ExitScript 1
 	if (!$bDefault) {
-		CONOUT "`nRun the script without parameters to obtain other tokens or force acquire license."
+		CONOUT "`nRun the script without parameters to obtain other tokens."
 		ExitScript 1
 	}
 	RunAcquireLicense
@@ -562,7 +646,7 @@ if ($null -eq $msaToken) {
 $eRet = DoEnroll
 if (!$eRet) {
 	CheckEligibility
-	Exit !$eRet
+	ExitScript !$eRet
 }
 # GetEligibility
 CheckEligibility
